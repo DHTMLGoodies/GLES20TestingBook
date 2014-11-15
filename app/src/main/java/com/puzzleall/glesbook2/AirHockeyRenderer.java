@@ -1,6 +1,10 @@
 package com.puzzleall.glesbook2;
 
+import android.content.Context;
 import android.opengl.GLSurfaceView;
+
+import com.puzzleall.glesbook2.util.ShaderHelper;
+import com.puzzleall.glesbook2.util.TextResourceReader;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -20,8 +24,11 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
     private static final int POSITION_COMPONENT_COUNT = 2;
     private static final int BYTES_PER_FLOAT = 4;
     private final FloatBuffer vertexData;
+    private Context context;
+    private int program;
 
-    public AirHockeyRenderer() {
+    public AirHockeyRenderer(Context context) {
+        this.context = context;
         float[] tableVerticesWithTriangles = {
                 // Triangle 1
                 0f, 0f,
@@ -50,6 +57,13 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
     @Override
     public void onSurfaceCreated(GL10 glUnused, EGLConfig config) {
         glClearColor(1.0f, 0.0f, 0.0f, 0.0f);
+
+        String vertexShaderSource = TextResourceReader.readTextFileFromResource(context, R.raw.simple_vertex_shader);
+        String fragmentShaderSource = TextResourceReader.readTextFileFromResource(context, R.raw.simple_fragment_shader);
+
+        int vertexShader = ShaderHelper.compileVertexShader(vertexShaderSource);
+        int fragmentShader = ShaderHelper.compileFragmentShader(fragmentShaderSource);
+        program = ShaderHelper.linkProgram(vertexShader, fragmentShader);
     }
 
     @Override
