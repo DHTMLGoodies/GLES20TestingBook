@@ -12,7 +12,7 @@ public class MatrixHelper {
         m[2] = 0f;
         m[3] = 0f;
         m[4] = 0f;
-        m[5] = 0f;
+        m[5] = a;
         m[6] = 0f;
         m[7] = 0f;
         m[8] = 0f;
@@ -26,3 +26,4 @@ public class MatrixHelper {
     }
 
 }
+

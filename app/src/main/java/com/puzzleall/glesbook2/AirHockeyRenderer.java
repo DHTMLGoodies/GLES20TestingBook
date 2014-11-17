@@ -4,6 +4,7 @@ import android.content.Context;
 import android.opengl.GLSurfaceView;
 
 import com.puzzleall.glesbook2.util.LoggerConfig;
+import com.puzzleall.glesbook2.util.MatrixHelper;
 import com.puzzleall.glesbook2.util.ShaderHelper;
 import com.puzzleall.glesbook2.util.TextResourceReader;
 
@@ -34,6 +35,7 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
     private int uMatrixLocation;
 
     private final float[] projectionMatrix = new float[16];
+    private final float[] modelMatrix = new float[16];
 
     // Two components(x,y) per vertex
 
@@ -47,7 +49,7 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
         this.context = context;
         float[] tableVerticesWithTriangles = {
                 // Triangle fan
-                0f, 0f, 1f,1f,1f,
+                0f, 0f, 1f, 1f, 1f,
                 // Bottom
                 -0.5f, -0.8f, 0.7f, 0.7f, 0.7f,
                 0.5f, -0.8f, 0.7f, 0.7f, 0.7f,
@@ -56,8 +58,8 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
                 -0.5f, -0.8f, 0.7f, 0.7f, 0.7f,
 
                 // Line 1
-                -0.5f, 0f, 0.8f, 0.3f, 0f,
-                0.5f, 0f, 0.8f, 1f, 0f,
+                -0.5f, 0f, 1f, 0f, 0f,
+                0.5f, 0f, 1f, 0f, 0f,
                 // Mallets
                 0f, -0.4f, 0f, 0f, 1f,
                 0f, 0.4f, 1f, 0f, 0f
@@ -89,10 +91,9 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
 
         aColorLocation = glGetAttribLocation(program, A_COLOR);
         aPositionLocation = glGetAttribLocation(program, A_POSITION);
+        uMatrixLocation = glGetUniformLocation(program, U_MATRIX);
 
-        vertexData.position(POSITION_COMPONENT_COUNT);
-        glVertexAttribPointer(aColorLocation, COLOR_COMPONENT_COUNT, GL_FLOAT, false, STRIDE, vertexData);
-        glEnableVertexAttribArray(aColorLocation);
+
 
         vertexData.position(0);
         // Very important function
@@ -107,7 +108,11 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
         // Enable the attribute
         glEnableVertexAttribArray(aPositionLocation);
 
-        uMatrixLocation = glGetUniformLocation(program, U_MATRIX);
+        vertexData.position(POSITION_COMPONENT_COUNT);
+        glVertexAttribPointer(aColorLocation, COLOR_COMPONENT_COUNT, GL_FLOAT, false, STRIDE, vertexData);
+        glEnableVertexAttribArray(aColorLocation);
+
+
     }
 
     @Override
@@ -115,13 +120,25 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
         // Set the OpenGL Viewport to fill the entire surface
         glViewport(0, 0, width, height);
 
-        final float aspectRatio = width > height ? (float)width / (float) height : (float) height / (float) width;
+        MatrixHelper.perspectiveM(
+                projectionMatrix,
+                45, // Field of vision
+                (float) width / (float) height, // aspect
+                1f, // near plane
+                10f // far plane
+        );
 
-        if(width > height){
-            orthoM(projectionMatrix, 0, -aspectRatio, aspectRatio, -1f, 1f, -1f, 1f);
-        }else{
-            orthoM(projectionMatrix, 0, -1f, 1f, -aspectRatio, aspectRatio, -1f, 1f);
-        }
+        // Set model matrix to identity matrix
+        setIdentityM(modelMatrix, 0);
+        // Move the matrix by 2 unites along the negative z-axis.
+        translateM(modelMatrix, 0, 0f, 0f, -2.5f);
+        rotateM(modelMatrix, 0, -60f, 1f, 0f, 0f);
+
+        final float[] temp = new float[16];
+        // Multiply projectionMatrix by modelMatrix and put the result inside temp
+        multiplyMM(temp, 0, projectionMatrix, 0, modelMatrix, 0);
+        // Copy temp to projectionMatrix
+        System.arraycopy(temp, 0, projectionMatrix, 0, temp.length);
     }
 
     @Override
@@ -130,21 +147,15 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
 
         glUniformMatrix4fv(uMatrixLocation, 1, false, projectionMatrix, 0);
 
-        //glUniform4f(uColorLocation, 1.0f, 1.0f, 1.0f, 1.0f);
         // Draw first 6 vertices, i.e. four triangles as fan
         glDrawArrays(GL_TRIANGLE_FAN, 0, 6);
 
-
         glDrawArrays(GL_LINES, 6, 2);
 
-
         // Draw the first mallet blue
-        //glUniform4f(uColorLocation, 0.0f, 0.0f, 1.0f, 1.0f);
         glDrawArrays(GL_POINTS, 8, 1);
 
         // Draw the second mallet red
-        //glUniform4f(uColorLocation, 1.0f, 0.0f, 0.0f, 1.0f);
         glDrawArrays(GL_POINTS, 9, 1);
-
     }
 }
