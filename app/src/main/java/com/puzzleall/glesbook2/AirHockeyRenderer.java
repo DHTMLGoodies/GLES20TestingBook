@@ -15,10 +15,13 @@ import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 import static android.opengl.GLES20.*;
+import static android.opengl.Matrix.*;
 
 public class AirHockeyRenderer implements GLSurfaceView.Renderer {
 
     private static final String A_COLOR = "a_Color";
+    private static final String U_MATRIX = "u_Matrix";
+
     private static final int COLOR_COMPONENT_COUNT = 3;
     private static final int POSITION_COMPONENT_COUNT = 2;
     private static final int BYTES_PER_FLOAT = 4;
@@ -28,6 +31,9 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
     private static final String A_POSITION = "a_Position";
     private int aPositionLocation;
     private int aColorLocation;
+    private int uMatrixLocation;
+
+    private final float[] projectionMatrix = new float[16];
 
     // Two components(x,y) per vertex
 
@@ -43,37 +49,18 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
                 // Triangle fan
                 0f, 0f, 1f,1f,1f,
                 // Bottom
-                -0.5f, -0.5f, 0.7f, 0.7f, 0.7f,
-                -0.25f, -0.5f, 0.7f, 0.7f, 0.7f,
-                0f, -0.5f, 0.7f, 0.7f, 0.7f,
-                0.25f, -0.5f, 0.7f, 0.7f, 0.7f,
-                0.5f, -0.5f, 0.7f, 0.7f, 0.7f,
-
-                // Right edge
-                0.5f, -0.25f, 0.7f, 0.7f, 0.7f,
-                0.5f, 0f, 0.7f, 0.7f, 0.7f,
-                0.5f, 0.25f, 0.7f, 0.7f, 0.7f,
-                0.5f, 0.5f, 0.7f, 0.7f, 0.7f,
-
-                // Top
-                0.25f, 0.5f, 0.7f, 0.7f, 0.7f,
-                0f, 0.5f, 0.7f, 0.7f, 0.7f,
-                -0.25f, 0.5f, 0.7f, 0.7f, 0.7f,
-                -0.5f, 0.5f, 0.7f, 0.7f, 0.7f,
-
-                // Left edge
-                -0.5f, 0.25f, 0.7f, 0.7f, 0.7f,
-                -0.5f, 0f, 0.7f, 0.7f, 0.7f,
-                -0.5f, -0.25f, 0.7f, 0.7f, 0.7f,
-                -0.5f, -0.5f, 0.7f, 0.7f, 0.7f,
+                -0.5f, -0.8f, 0.7f, 0.7f, 0.7f,
+                0.5f, -0.8f, 0.7f, 0.7f, 0.7f,
+                0.5f, 0.8f, 0.7f, 0.7f, 0.7f,
+                -0.5f, 0.8f, 0.7f, 0.7f, 0.7f,
+                -0.5f, -0.8f, 0.7f, 0.7f, 0.7f,
 
                 // Line 1
                 -0.5f, 0f, 0.8f, 0.3f, 0f,
-                -0f, 0f, 1f, 0f, 0f,
                 0.5f, 0f, 0.8f, 1f, 0f,
                 // Mallets
-                0f, -0.25f, 0f, 0f, 1f,
-                0f, 0.25f, 1f, 0f, 0f
+                0f, -0.4f, 0f, 0f, 1f,
+                0f, 0.4f, 1f, 0f, 0f
         };
 
         // Allocate block of native memory, memory not managed by the garbage collector.
@@ -119,33 +106,45 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
         );
         // Enable the attribute
         glEnableVertexAttribArray(aPositionLocation);
+
+        uMatrixLocation = glGetUniformLocation(program, U_MATRIX);
     }
 
     @Override
     public void onSurfaceChanged(GL10 glUnused, int width, int height) {
         // Set the OpenGL Viewport to fill the entire surface
         glViewport(0, 0, width, height);
+
+        final float aspectRatio = width > height ? (float)width / (float) height : (float) height / (float) width;
+
+        if(width > height){
+            orthoM(projectionMatrix, 0, -aspectRatio, aspectRatio, -1f, 1f, -1f, 1f);
+        }else{
+            orthoM(projectionMatrix, 0, -1f, 1f, -aspectRatio, aspectRatio, -1f, 1f);
+        }
     }
 
     @Override
     public void onDrawFrame(GL10 glUnused) {
         glClear(GL_COLOR_BUFFER_BIT);
 
+        glUniformMatrix4fv(uMatrixLocation, 1, false, projectionMatrix, 0);
+
         //glUniform4f(uColorLocation, 1.0f, 1.0f, 1.0f, 1.0f);
         // Draw first 6 vertices, i.e. four triangles as fan
-        glDrawArrays(GL_TRIANGLE_FAN, 0, 18);
+        glDrawArrays(GL_TRIANGLE_FAN, 0, 6);
 
 
-        glDrawArrays(GL_LINES, 18, 2);
-        glDrawArrays(GL_LINES, 19, 2);
+        glDrawArrays(GL_LINES, 6, 2);
+
 
         // Draw the first mallet blue
         //glUniform4f(uColorLocation, 0.0f, 0.0f, 1.0f, 1.0f);
-        glDrawArrays(GL_POINTS, 21, 1);
+        glDrawArrays(GL_POINTS, 8, 1);
 
         // Draw the second mallet red
         //glUniform4f(uColorLocation, 1.0f, 0.0f, 0.0f, 1.0f);
-        glDrawArrays(GL_POINTS, 22, 1);
+        glDrawArrays(GL_POINTS, 9, 1);
 
     }
 }
