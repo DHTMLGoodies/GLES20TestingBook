@@ -19,17 +19,20 @@ public class AirHockeyActivity extends ActionBarActivity {
         super.onCreate(savedInstanceState);
         glSurfaceView = new GLSurfaceView(this);
 
-        final ActivityManager activityManager = (ActivityManager)getSystemService(Context.ACTIVITY_SERVICE);
+        final ActivityManager activityManager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
         final ConfigurationInfo configurationInfo = activityManager.getDeviceConfigurationInfo();
         final boolean supportsEs2 = configurationInfo.reqGlEsVersion >= 0x20000;
 
-        if(supportsEs2){
+        getSupportActionBar().hide();
+
+
+        if (supportsEs2) {
             // Request an OpenGL ES 2.0 compatible context.
             glSurfaceView.setEGLContextClientVersion(2);
             // Assign our renderer
             glSurfaceView.setRenderer(new AirHockeyRenderer(this));
             renderedSet = true;
-        }else{
+        } else {
             return;
         }
 
@@ -37,17 +40,17 @@ public class AirHockeyActivity extends ActionBarActivity {
     }
 
     @Override
-    public void onPause(){
+    public void onPause() {
         super.onPause();
-        if(renderedSet){
+        if (renderedSet) {
             glSurfaceView.onPause();
         }
     }
 
     @Override
-    public void onResume(){
+    public void onResume() {
         super.onResume();
-        if(renderedSet){
+        if (renderedSet) {
             glSurfaceView.onResume();
         }
     }
